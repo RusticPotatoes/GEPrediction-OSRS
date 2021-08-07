@@ -1,0 +1,1 @@
+["MACD", "Rope_sq", "Mithril_bar"]

@@ -11,12 +11,16 @@ import pandas as pd
 import json
 import datetime
 import gc
+import math
+
+# current directory
+parent_dir = os.path.dirname(os.path.realpath(__file__))
 
 mpl.rcParams['figure.figsize'] = (8, 6)
 mpl.rcParams['axes.grid'] = False
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-TRAIN_SPLIT = 750
+#TRAIN_SPLIT = 10
 tf.random.set_seed(13)
 STEP = 1
 
@@ -32,22 +36,27 @@ def univariate_data(dataset, start_index, end_index, history_size, target_size):
 	for i in range(start_index, end_index):
 		indices = range(i-history_size, i)
 		# Reshape data from (history_size,) to (history_size, 1)
-		data.append(np.reshape(dataset[indices], (history_size, 1)))
+		print(dataset[indices])
+		#print()
+		data.append(np.reshape(dataset[indices], (history_size,1)))
 		labels.append(dataset[i+target_size])
 	return np.array(data), np.array(labels)
 
-def univariate_rnn(df, item_to_predict, save_model=True, verbose=1, past_history=30, BATCH_SIZE=32, BUFFER_SIZE=30, \
+def univariate_rnn(df, item_to_predict, save_model=True, verbose=1, past_history=5, BATCH_SIZE=32, BUFFER_SIZE=30, \
 	EVALUATION_INTERVAL=200, EPOCHS=10, lstm_units=8):
 	uni_data = df[item_to_predict]
 	uni_data = uni_data.values
+	#end=len
 
+	#if past_history > len(uni_data):
+	#		past_history=len(uni_data)-1
+	split=math.ceil(len(uni_data)/2)
 	univariate_past_history = past_history
 	univariate_future_target = 0
-
-	x_train_uni, y_train_uni = univariate_data(uni_data, 0, TRAIN_SPLIT,
+	x_train_uni, y_train_uni = univariate_data(uni_data, 0, split,
 											univariate_past_history,
 											univariate_future_target)
-	x_val_uni, y_val_uni = univariate_data(uni_data, TRAIN_SPLIT, None,
+	x_val_uni, y_val_uni = univariate_data(uni_data, split, None,
 										univariate_past_history,
 										univariate_future_target)
 
@@ -69,10 +78,10 @@ def univariate_rnn(df, item_to_predict, save_model=True, verbose=1, past_history
 						validation_data=val_univariate, validation_steps=50, verbose=verbose)
 
 	if (save_model):
-		simple_lstm_model.save('models/{}_uni_model.h5'.format(item_to_predict))
+		simple_lstm_model.save(os.path.join(parent_dir, 'models/{}_uni_model.h5'.format(item_to_predict)))
 
 		# open output file for writing
-		with open('models/features/{}_uni_features.txt'.format(item_to_predict), 'w') as filehandle:
+		with open(os.path.join(parent_dir,'models/features/{}_uni_features.txt'.format(item_to_predict)), 'w') as filehandle:
 			json.dump(df.columns.values.tolist(), filehandle)
 	
 	return simple_lstm_history.history
@@ -103,14 +112,15 @@ def show_plot(plot_data, delta, title):
 	plt.xlabel('Time-Step')
 	return plt
 
-def apply_univariate_test(df, item_to_predict, model, item_std, item_mean, past_history=30, BATCH_SIZE=32):
+def apply_univariate_test(df, item_to_predict, model, item_std, item_mean, past_history=5, BATCH_SIZE=32):
 
 	uni_data = df[item_to_predict]
 	uni_data = uni_data.values
-
 	univariate_past_history = past_history
 	univariate_future_target = 0
-	x_val_uni, y_val_uni = univariate_data(uni_data, TRAIN_SPLIT, None,
+	split=math.floor((len(uni_data)/2)-1)
+
+	x_val_uni, y_val_uni = univariate_data(uni_data, split, None,
 										univariate_past_history,
 										univariate_future_target)
 	val_univariate = tf.data.Dataset.from_tensor_slices((x_val_uni, y_val_uni))
@@ -144,7 +154,9 @@ def multivariate_data(dataset, target, start_index, end_index, history_size,
 		else:
 			labels.append(target[i:i+target_size])
 
+
 	return np.array(data), np.array(labels)
+
 
 def plot_train_history(history, title):
 	loss = history.history['loss']
@@ -161,21 +173,21 @@ def plot_train_history(history, title):
 
 	plt.show()
 
-def multivariate_rnn_single(df, item_to_predict, save_model=True, verbose=1, past_history=30, BATCH_SIZE=32, BUFFER_SIZE=30, \
+def multivariate_rnn_single(df, item_to_predict, save_model=True, verbose=1, past_history=5, BATCH_SIZE=32, BUFFER_SIZE=30, \
 	EVALUATION_INTERVAL=200, EPOCHS=10, num_dropout=1, lstm_units=32, learning_rate=0.001):
 	dataset = df.values
-
 	future_target = 1
 	STEP = 1
+	split=math.ceil(len(dataset)/2)
 
 	item_to_predict_index = df.columns.get_loc(item_to_predict)
 
 	x_train_single, y_train_single = multivariate_data(dataset, dataset[:, item_to_predict_index], 0,
-													TRAIN_SPLIT, past_history,
+													split, past_history,
 													future_target, STEP,
 													single_step=True)
 	x_val_single, y_val_single = multivariate_data(dataset, dataset[:, item_to_predict_index],
-												TRAIN_SPLIT, None, past_history,
+												split, None, past_history,
 												future_target, STEP,
 												single_step=True)
 
@@ -203,20 +215,20 @@ def multivariate_rnn_single(df, item_to_predict, save_model=True, verbose=1, pas
 
 	if (save_model):
 		# save model to models folder and features to models/features
-		single_step_model.save('models/{}_multiS_model.h5'.format(item_to_predict))
+		single_step_model.save(os.path.join(parent_dir,'models/{}_multiS_model.h5'.format(item_to_predict)))
 
-		with open('models/features/{}_multiS_features.txt'.format(item_to_predict), 'w') as filehandle:
+		with open(os.path.join(parent_dir,'models/features/{}_multiS_features.txt'.format(item_to_predict)), 'w') as filehandle:
 			json.dump(df.columns.values.tolist(), filehandle)
 
 	return single_step_history.history
 
-def apply_multivariate_single_step_test(df, item_to_predict, model, item_std, item_mean, past_history=30, BATCH_SIZE=32):
+def apply_multivariate_single_step_test(df, item_to_predict, model, item_std, item_mean, past_history=5, BATCH_SIZE=32):
 	dataset = df.values
 	future_target = 1
 	item_to_predict_index = df.columns.get_loc(item_to_predict)
-
+	split=math.ceil(len(dataset)/2)
 	x_val_single, y_val_single = multivariate_data(dataset, dataset[:, item_to_predict_index],
-												TRAIN_SPLIT, None, past_history,
+												split, None, past_history,
 												future_target, STEP,
 												single_step=True)
 	val_data_single = tf.data.Dataset.from_tensor_slices((x_val_single, y_val_single))
@@ -232,7 +244,12 @@ def apply_multivariate_single_step_test(df, item_to_predict, model, item_std, it
 		plot.show()
 
 # =========== MULTIVARIATE MULTI STEP FUNCTIONS =========== 
-def multi_step_plot(history, true_future, prediction, item_to_predict_index, save_imgs=False, img_title="plot", index=0):
+def multi_step_plot(history, true_future, prediction, item_to_predict_index, save_imgs=True, img_title="plot", index=0, item_to_predict=""):
+
+	mode = 0o666
+	img_dir = os.path.join(parent_dir,'imgs/{}'.format(item_to_predict))
+	if not os.path.exists(item_to_predict): os.makedirs(item_to_predict, mode)
+
 	fig = plt.figure(figsize=(12, 6))
 	num_in = create_time_steps(len(history))
 	num_out = len(true_future)
@@ -243,27 +260,52 @@ def multi_step_plot(history, true_future, prediction, item_to_predict_index, sav
 	if prediction.any():
 		plt.plot(np.arange(num_out)/STEP, np.array(prediction), 'ro',
 				label='Predicted Future')
+	
+	#get the last history value
+	#?
+	#real perfect profit is last real history minus future real history
+	#?
+	##true_future - np.roll(true_future, -1)
+	#predicted profit 
+	#?
+	##predicted - np.roll(true_future, -1)
+
 	plt.legend(loc='upper left')
-	plt.title(img_title)
-	if (save_imgs): fig.savefig('imgs/{}.png'.format(index))
+	plt.title(item_to_predict)
+
+	#closest_real_values = buy_avg.iloc[buy_avg.index.get_loc(int(temp_last_row[0]), method='nearest')]
+	#real_val = int(closest_real_values[item_predicted])
+	#pred_val = int(last_row[prediction_index])
+	#data[item_predicted] = [real_val, pred_val, pred_val-real_val]
+
+	if (save_imgs): 
+		fig.savefig(os.path.join(item_to_predict,'{}_{}.png'.format(item_to_predict,index)))
 	plt.show()
 
-def multivariate_rnn_multi(df, item_to_predict, save_model=True, verbose=1, future_target=5, past_history=30, \
+def multivariate_rnn_multi(df, item_to_predict, save_model=True, verbose=1, future_target=5, past_history=5, \
 	BATCH_SIZE=32, BUFFER_SIZE=30, EVALUATION_INTERVAL=200, EPOCHS=10, num_dropout=1, lstm_units=64, learning_rate=0.001):
 	dataset = df.values
 	item_to_predict_index = df.columns.get_loc(item_to_predict)
+	split=math.floor((len(dataset)/2)-1)
 
 	x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, item_to_predict_index], 0,
-													TRAIN_SPLIT, past_history,
+													split, past_history,
 													future_target, STEP)
+	#if you get errors here , check the object, if it's an Object array the history is larger than the dataset split
+	# you need for the split to be less than half - history value you have set.  
+	# if you have an index of length 25, and you are splitting in half, so 13 if rounding up
+	# you cannot have the history to be more than (25-12-5)
 	x_val_multi, y_val_multi = multivariate_data(dataset, dataset[:, item_to_predict_index],
-												TRAIN_SPLIT, None, past_history,
+												split, None, past_history,
 												future_target, STEP)
 
 	train_data_multi = tf.data.Dataset.from_tensor_slices((x_train_multi, y_train_multi))
+
 	train_data_multi = train_data_multi.cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE).repeat()
 
+
 	val_data_multi = tf.data.Dataset.from_tensor_slices((x_val_multi, y_val_multi))
+
 	val_data_multi = val_data_multi.batch(BATCH_SIZE).repeat()
 
 	multi_step_model = tf.keras.models.Sequential()
@@ -273,6 +315,7 @@ def multivariate_rnn_multi(df, item_to_predict, save_model=True, verbose=1, futu
 	# multi_step_model.add(tf.keras.layers.LSTM(32, return_sequences=True))
 	multi_step_model.add(tf.keras.layers.LSTM(int(lstm_units/2), activation='sigmoid'))
 	multi_step_model.add(tf.keras.layers.Dense(future_target)) 
+
 	for _ in range(num_dropout):
 		multi_step_model.add(tf.keras.layers.Dropout(0.5))
 		multi_step_model.add(tf.keras.layers.Dense(future_target))
@@ -289,19 +332,19 @@ def multivariate_rnn_multi(df, item_to_predict, save_model=True, verbose=1, futu
 
 	if (save_model):
 		# save model to models folder and features to models/features
-		multi_step_model.save('models/{}_multiM_model.h5'.format(item_to_predict))
+		multi_step_model.save(os.path.join(parent_dir,'models/{}_multiM_model.h5'.format(item_to_predict)))
 
-		with open('models/features/{}_multiM_features.txt'.format(item_to_predict), 'w') as filehandle:
+		with open(os.path.join(parent_dir,'models/features/{}_multiM_features.txt'.format(item_to_predict)), 'w') as filehandle:
 			json.dump(df.columns.values.tolist(), filehandle)
 	
 	return multi_step_history.history
 
-def apply_multivariate_multi_step_test(df, item_to_predict, model, item_std, item_mean, future_target=5, past_history=30, BATCH_SIZE=32):
+def apply_multivariate_multi_step_test(df, item_to_predict, model, item_std, item_mean, future_target=5, past_history=5, BATCH_SIZE=32):
 	dataset = df.values
 	item_to_predict_index = df.columns.get_loc(item_to_predict)
-
+	split=math.ceil(len(dataset)/2)
 	x_val_multi, y_val_multi = multivariate_data(dataset, dataset[:, item_to_predict_index],
-												TRAIN_SPLIT, None, past_history,
+												split, None, past_history,
 												future_target, STEP)
 
 	val_data_multi = tf.data.Dataset.from_tensor_slices((x_val_multi, y_val_multi))
@@ -311,8 +354,10 @@ def apply_multivariate_multi_step_test(df, item_to_predict, model, item_std, ite
 	def unnormalized(val):
 		return (val*item_std) + item_mean
 	
+	countindex=0
 	for x, y in val_data_multi.take(3):
-		multi_step_plot(unnormalized(x[0].numpy()), unnormalized(y[0].numpy()), unnormalized(model.predict(x)[0]), item_to_predict_index)
+		multi_step_plot(unnormalized(x[0].numpy()), unnormalized(y[0].numpy()), unnormalized(model.predict(x)[0]), item_to_predict_index,item_to_predict=item_to_predict,index=countindex)
+		countindex+=1
 
 # =========== HYPERPARAMETER TUNING FUNCTIONS =========== 
 def multivariate_rnn_multi_hyperparameter_tuning(df, item_to_predict, batch_size=[32], buffer_size = [30], \
@@ -321,7 +366,7 @@ def multivariate_rnn_multi_hyperparameter_tuning(df, item_to_predict, batch_size
 
 	# Write results to file
 	current_time = datetime.datetime.utcnow()
-	HP_FILE = 'data/hp-tuning/{}_MultiM.txt'.format(current_time.strftime("%m-%d-%Y"))
+	HP_FILE = os.path.join(parent_dir,'data/hp-tuning/{}_MultiM.txt'.format(current_time.strftime("%m-%d-%Y")))
 
 	with open(HP_FILE, 'a') as the_file:
 		the_file.write('\nHyperparameter Tuning - item: {}, features: {} - {}\n\n'.format(item_to_predict, \
@@ -361,7 +406,7 @@ def multivariate_rnn_single_hyperparameter_tuning(df, item_to_predict, batch_siz
 
 	# Write results to file
 	current_time = datetime.datetime.utcnow()
-	HP_FILE = 'data/hp-tuning/{}_MultiS.txt'.format(current_time.strftime("%m-%d-%Y"))
+	HP_FILE = os.path.join(parent_dir,'data/hp-tuning/{}_MultiS.txt'.format(current_time.strftime("%m-%d-%Y")))
 
 	with open(HP_FILE, 'a') as the_file:
 		the_file.write('\nHyperparameter Tuning - item: {}, features: {} - {}\n\n'.format(item_to_predict, \
@@ -400,7 +445,7 @@ def univariate_rnn_hyperparameter_tuning(df, item_to_predict, batch_size=[32], b
 
 	# Write results to file
 	current_time = datetime.datetime.utcnow()
-	HP_FILE = 'data/hp-tuning/{}_Uni.txt'.format(current_time.strftime("%m-%d-%Y"))
+	HP_FILE = os.path.join(parent_dir,'data/hp-tuning/{}_Uni.txt'.format(current_time.strftime("%m-%d-%Y")))
 
 	with open(HP_FILE, 'a') as the_file:
 		the_file.write('\nHyperparameter Tuning - item: {}, features: {} - {}\n\n'.format(item_to_predict, \
@@ -483,13 +528,10 @@ def full_hyperparameter_tuning():
 			del preprocessed_df
 			gc.collect()
 
-
 def main():
 	# items_to_predict = item_selection()
 	# items_to_predict = select_sorted_items(items_to_predict)
-	items_to_predict = ['Amulet_of_strength', "Green_d'hide_vamb", 'Staff_of_fire', 'Zamorak_monk_top', 'Staff_of_air', \
-			'Adamantite_bar', 'Zamorak_monk_bottom', 'Adamant_platebody', 'Runite_ore', 'Rune_scimitar', 'Rune_pickaxe', \
-					'Rune_full_helm', 'Rune_kiteshield', 'Rune_2h_sword', 'Rune_platelegs', 'Rune_platebody', 'Old_school_bond']
+	items_to_predict = ['Mithril_bar','Air_battlestaff','Red_chinchompa','Manta_ray','Saradomin_brew(4)','Anglerfish','Purple_sweets','Anti-venom+(4)','Cactus_spine']
 	num_features = 2
 
 	for item_to_predict in items_to_predict:
@@ -497,11 +539,14 @@ def main():
 		# SELECT ITEMS
 		items_selected = item_selection()
 
+		print("Learning [{}]".format(item_to_predict))
+
 		# FEATURE EXTRACTION
 		preprocessed_df = prepare_data(item_to_predict, items_selected)
 
 		# FEATURE SELECTION & NORMALIZATION
 		selected_df, pred_std, pred_mean = regression_f_test(preprocessed_df, item_to_predict, number_of_features=num_features)
+		#TRAIN_SPLIT=math.ceil((len(selected_df)/2))
 		# print(selected_df.head())
 		# print(selected_df.shape)
 		# print("columns with nan: {}".format(selected_df.columns[selected_df.isna().any()].tolist()))
@@ -510,31 +555,35 @@ def main():
 		# =========== UNIVARIATE =========== 
 		uni_config = {}
 		# TRAINING AND SAVING MODEL
+		print("On [{}]".format('UNIVARIATE'))
 		univariate_rnn(selected_df, item_to_predict)
 
 		# # LOADING AND APPLYING MODEL
-		# loaded_model = tf.keras.models.load_model('models/{}_uni_model.h5'.format(item_to_predict))
-		# apply_univariate_test(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
+		#os.path.join(parent_dir,'models/{}_multiM_model.h5'.format(item_to_predict))
+		loaded_model = tf.keras.models.load_model(os.path.join(parent_dir,'models/{}_uni_model.h5'.format(item_to_predict)))
+		apply_univariate_test(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
 
 
 		# =========== MULTIVARIATE SINGLE STEP ===========
-		multiS_config = {'lstm_units':64, 'EVALUATION_INTERVAL':300, 'EPOCHS':10, 'learning_rate':0.0001, 'num_dropout': 2}
+		multiS_config = {'lstm_units':64, 'EVALUATION_INTERVAL':10, 'EPOCHS':10, 'learning_rate':0.0001, 'num_dropout': 2}
 		# TRAINING AND SAVING MODEL
+		print("On [{}]".format('MULTIVARIATE SINGLE STEP'))
 		multivariate_rnn_single(selected_df, item_to_predict, **multiS_config)
 
 		# # LOADING AND APPLYING MODEL
-		# loaded_model = tf.keras.models.load_model('models/{}_multiS_model.h5'.format(item_to_predict))
-		# apply_multivariate_single_step_test(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
+		loaded_model = tf.keras.models.load_model(os.path.join(parent_dir,'models/{}_multiS_model.h5'.format(item_to_predict)))
+		apply_multivariate_single_step_test(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
 
 
 		# =========== MULTIVARIATE MULTI STEP ===========
-		multiM_config = {'lstm_units':128, 'EVALUATION_INTERVAL':400, 'EPOCHS':15, 'learning_rate':0.0001, 'num_dropout': 2}
+		multiM_config = {'lstm_units':128, 'EVALUATION_INTERVAL':10, 'EPOCHS':15, 'learning_rate':0.0001, 'num_dropout': 2}
 		# TRAINING AND SAVING MODEL
+		print("On [{}]".format('MULTIVARIATE MULTI STEP'))
 		multivariate_rnn_multi(selected_df, item_to_predict, **multiM_config)
 
 		# # LOADING AND APPLYING MODEL
-		# loaded_model = tf.keras.models.load_model('models/{}_multiM_model.h5'.format(item_to_predict))
-		# apply_multivariate_multi_step_test(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
+		loaded_model = tf.keras.models.load_model(os.path.join(parent_dir,'models/{}_multiM_model.h5'.format(item_to_predict)))
+		apply_multivariate_multi_step_test(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
 
 
 	# # # =========== HYPERPARAMETER TUNING ===========

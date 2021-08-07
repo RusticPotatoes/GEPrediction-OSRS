@@ -10,8 +10,10 @@ from sklearn.feature_selection import RFE, f_regression, SelectKBest
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestRegressor
 
-# DATA_FOLDER = "data/osbuddy/excess/"
-# DATA_FOLDER = "data/rsbuddy/"
+parent_dir = os.path.dirname(os.path.realpath(__file__))
+
+# DATA_FOLDER = "/opt/app/data/workspace/GEPrediction-OSRS/data/osbuddy/excess/"
+# DATA_FOLDER = "/opt/app/data/workspace/GEPrediction-OSRS/data/rsbuddy/"
 rsAPI = "https://storage.googleapis.com/osb-exchange/summary.json"
 
 def save_member_items():
@@ -26,28 +28,28 @@ def save_member_items():
 			member_list.append(json_data[item]["name"].replace(" ", "_"))
 	
 	# open output file for writing
-	with open('data/non_member_list.txt', 'w') as filehandle:
+	with open(os.path.join(parent_dir,'data/non_member_list.txt'), 'w') as filehandle:
 		json.dump(non_member_list, filehandle)
 	
 	# open output file for writing
-	with open('data/member_list.txt', 'w') as filehandle:
+	with open(os.path.join(parent_dir,'data/member_list.txt', 'w')) as filehandle:
 		json.dump(member_list, filehandle)
 
 	# print("member items: {}, non-member items: {}".format(len(member_list), len(non_member_list)))
 	
-def item_selection(DATA_FOLDER = "data/rsbuddy/", drop_percentage=0.05):
+def item_selection(DATA_FOLDER = os.path.join(parent_dir,"data/rsbuddy/"), drop_percentage=0.99):
 	buy_quantity = pd.read_csv(DATA_FOLDER + "buy_quantity.csv", error_bad_lines=False, warn_bad_lines=False)
 	buy_quantity = buy_quantity.set_index('timestamp')
 	buy_quantity = buy_quantity.drop_duplicates()
-	df = buy_quantity.loc[:, (buy_quantity==0).mean() < drop_percentage]  # Drop columns with more than 5% 0s
+	df = buy_quantity#.loc[:, (buy_quantity==0).mean() < drop_percentage]  # Drop columns with more than 5% 0s
 
 	# open output file for reading
-	with open('data/member_list.txt', 'r') as filehandle:
+	with open(os.path.join(parent_dir,'data/member_list.txt'), 'r') as filehandle:
 		member_list = json.load(filehandle)
 	
-	for item_name in member_list:
-		if (item_name in df.columns.values):
-			df = df.drop(item_name, axis=1)  # Drop all member only items
+	#for item_name in member_list:
+	#	if (item_name in df.columns.values):
+	#		df = df.drop(item_name, axis=1)  # Drop all member only items
 
 	# print(df.shape)
 	return df.columns.values
@@ -78,7 +80,7 @@ def RSI(group, n=14):
 	rsi=rsi.rename('RSI')
 	return rsi
 
-def prepare_data(item_to_predict, items_selected, verbose=False, DATA_FOLDER = "data/rsbuddy/", reused_df=None, specific_features=None):
+def prepare_data(item_to_predict, items_selected, verbose=False, DATA_FOLDER = os.path.join(parent_dir,"data/rsbuddy/"), reused_df=None, specific_features=None):
 	
 	# Computational optimization for application (just need to change MACD, RSI or slope)
 	if specific_features is not None and reused_df is not None: 
@@ -229,7 +231,7 @@ def recursive_feature_elim(input_df, item_to_predict, number_of_features=7):
 def unnormalized(val, std, mean):
 	return (val*std) + mean
 
-def select_sorted_items(items_selected, minimum_price=1000, verbose=False, DATA_FOLDER = "data/rsbuddy/"):
+def select_sorted_items(items_selected, minimum_price=1000, verbose=False, DATA_FOLDER = os.path.join(parent_dir,"data/rsbuddy/")):
 	
 	buy_average = pd.read_csv(DATA_FOLDER + "buy_average.csv", error_bad_lines=False, warn_bad_lines=False)
 	buy_average = buy_average.set_index('timestamp')
@@ -257,8 +259,8 @@ def main():
 	# SELECT ITEMS
 	items_selected = item_selection()
 	narrowed_items = select_sorted_items(items_selected)
-	print(narrowed_items)
-	item_to_predict = 'Oak_logs'
+	#print(narrowed_items)
+	item_to_predict = 'Arcane_spirit_shield'
 	# items_selected = ['Rune_axe', 'Rune_2h_sword', 'Rune_scimitar', 'Rune_chainbody', 'Rune_full_helm', 'Rune_kiteshield']
 
 	# # ADD FEATURES

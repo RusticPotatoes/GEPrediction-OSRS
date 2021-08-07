@@ -11,13 +11,15 @@ import json
 import csv
 import time
 
+parent_dir = os.path.dirname(os.path.realpath(__file__))
+
 TRAIN_SPLIT = 0
 tf.random.set_seed(13)
 STEP = 1
 
 labels = ['timestamp', 'uni', 'multiS', 'multiM1', 'multiM2', 'multiM3', 'multiM4', 'multiM5']
 def writeToCSV(filename, data, timestamp):
-	with open('data/predictions/{}.csv'.format(filename), mode='w', newline='') as GE_data:
+	with open(os.path.join(parent_dir, 'data/predictions/{}.csv'.format(filename)), mode='w', newline='') as GE_data:
 		GE_writer = csv.writer(GE_data, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 		GE_writer.writerow(labels)  # write field names
 
@@ -25,16 +27,15 @@ def writeToCSV(filename, data, timestamp):
 		new_array.extend(data)
 		GE_writer.writerow(new_array)
 
-
 def appendToCSV(filename, data, timestamp):
-	with open('data/predictions/{}.csv'.format(filename), mode='a', newline='') as GE_data:
+	with open(os.path.join(parent_dir,'data/predictions/{}.csv'.format(filename)), mode='a', newline='') as GE_data:
 		GE_writer = csv.writer(GE_data, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
 		new_array = [timestamp]
 		new_array.extend(data)
 		GE_writer.writerow(new_array)
 
-def apply_univariate(df, item_to_predict, model, item_std, item_mean, past_history=30):
+def apply_univariate(df, item_to_predict, model, item_std, item_mean, past_history=5):
 
 	df_newest_values = df.tail(past_history)[item_to_predict].values
 	reshaped_values = np.reshape(df_newest_values, (past_history, 1))
@@ -48,7 +49,7 @@ def apply_univariate(df, item_to_predict, model, item_std, item_mean, past_histo
 	
 	return result
 
-def apply_multivariate_single_step(df, item_to_predict, model, item_std, item_mean, past_history=30):
+def apply_multivariate_single_step(df, item_to_predict, model, item_std, item_mean, past_history=5):
 
 	df_newest_values = df.tail(past_history).values
 	formatted_values = np.array([df_newest_values])
@@ -61,7 +62,7 @@ def apply_multivariate_single_step(df, item_to_predict, model, item_std, item_me
 	
 	return result
 
-def apply_multivariate_multi_step(df, item_to_predict, model, item_std, item_mean, future_target=5, past_history=30):
+def apply_multivariate_multi_step(df, item_to_predict, model, item_std, item_mean, future_target=5, past_history=5):
 	df_newest_values = df.tail(past_history).values
 	formatted_values = np.array([df_newest_values])
 
@@ -81,24 +82,22 @@ def main():
 	model_types = ['uni', 'multiS', 'multiM']
 	
 	# SELECT ITEMS
-	items_selected = item_selection(drop_percentage=0.5)
-	items_to_predict = ['Amulet_of_strength', "Green_d'hide_vamb", 'Staff_of_fire', 'Zamorak_monk_top', 'Staff_of_air', \
-			'Adamantite_bar', 'Zamorak_monk_bottom', 'Adamant_platebody', 'Runite_ore', 'Rune_scimitar', 'Rune_pickaxe', \
-					'Rune_full_helm', 'Rune_kiteshield', 'Rune_2h_sword', 'Rune_platelegs', 'Rune_platebody', 'Old_school_bond']
+	items_selected = item_selection(drop_percentage=0.99)
+	items_to_predict = ['Mithril_bar','Air_battlestaff','Red_chinchompa','Saradomin_brew(4)','Anti-venom+(4)','Cactus_spine']
 
 	preprocessed_df = None
 	for item_to_predict in items_to_predict:
 		# GET LIST OF FEATURES
-		if not os.path.isfile('models/features/{}_{}_features.txt'.format(item_to_predict, model_types[0])):
+		if not os.path.isfile(os.path.join(parent_dir,'models/features/{}_{}_features.txt'.format(item_to_predict, model_types[0]))):
 			print ("Model for {} hasn't been created, please run models.py first.".format(item_to_predict))
 			return
 		specific_feature_list = []
-		with open('models/features/{}_{}_features.txt'.format(item_to_predict, model_types[0]), 'r') as filehandle:
+		with open(os.path.join(parent_dir,'models/features/{}_{}_features.txt'.format(item_to_predict, model_types[0])), 'r') as filehandle:
 			specific_feature_list = json.load(filehandle)
 
 		t0 = time.time()
 		# FEATURE EXTRACTION
-		preprocessed_df = prepare_data(item_to_predict, items_selected, DATA_FOLDER="data/rsbuddy/", \
+		preprocessed_df = prepare_data(item_to_predict, items_selected, DATA_FOLDER=os.path.join(parent_dir,"data/rsbuddy/"), \
 			reused_df=preprocessed_df, specific_features=specific_feature_list)
 
 		t1 = time.time()
@@ -110,7 +109,7 @@ def main():
 		predictions = []
 		for model_type in model_types:
 			# LOADING AND APPLYING MODEL
-			loaded_model = tf.keras.models.load_model('models/{}_{}_model.h5'.format(item_to_predict, model_type))
+			loaded_model = tf.keras.models.load_model(os.path.join(parent_dir,'models/{}_{}_model.h5'.format(item_to_predict, model_type)))
 
 			if (model_type == 'uni'):
 				result = apply_univariate(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
@@ -131,7 +130,7 @@ def main():
 		new_predictions = [int(i) for i in predictions]
 		print('item: {}, pred: {}'.format(item_to_predict, new_predictions))
 	
-		if os.path.isfile('data/predictions/{}.csv'.format(item_to_predict)):
+		if os.path.isfile(os.path.join(parent_dir,'data/predictions/{}.csv'.format(item_to_predict))):
 			appendToCSV(item_to_predict, new_predictions, current_timestamp)
 		else:
 			writeToCSV(item_to_predict, new_predictions, current_timestamp)

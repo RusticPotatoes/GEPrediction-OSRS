@@ -2,6 +2,10 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import csv
 import json
+import os
+
+parent_dir = os.path.dirname(os.path.realpath(__file__))
+
 app = Flask(__name__, template_folder='./templates', static_folder='./static')
 
 @app.route('/')
@@ -13,22 +17,20 @@ def index():
 	# 			"Green_d'hide_body", 'Rune_axe', 'Adamant_platebody', 'Runite_ore', 'Rune_scimitar', 'Rune_pickaxe', \
 	# 				'Rune_full_helm', 'Rune_kiteshield', 'Rune_2h_sword', 'Rune_platelegs', 'Rune_platebody', 'Old_school_bond']
 	
-	items_predicted = ['Amulet_of_strength', "Green_d'hide_vamb", 'Staff_of_fire', 'Zamorak_monk_top', 'Staff_of_air', \
-		'Adamantite_bar', 'Zamorak_monk_bottom', 'Adamant_platebody', 'Runite_ore', 'Rune_scimitar', 'Rune_pickaxe', \
-			'Rune_full_helm', 'Rune_kiteshield', 'Rune_2h_sword', 'Rune_platelegs', 'Rune_platebody', 'Old_school_bond']
+	items_predicted = ['Mithril_bar','Air_battlestaff','Red_chinchompa','Saradomin_brew(4)','Anti-venom+(4)','Cactus_spine']
 				
 	data = {}
 	names = {}
 	count = 0 
 	
-	buy_avg = pd.read_csv('data/rsbuddy/buy_average.csv')
+	buy_avg = pd.read_csv(os.path.join(parent_dir,'data/rsbuddy/buy_average.csv'))
 	buy_avg = buy_avg.set_index('timestamp')
 	buy_avg = buy_avg.drop_duplicates()
 	buy_avg = buy_avg.reset_index()
 	buy_avg = buy_avg.replace(to_replace=0, method='ffill')
 
 	for item_predicted in items_predicted:
-		df = pd.read_csv('data/predictions/{}.csv'.format(item_predicted))
+		df = pd.read_csv(os.path.join(parent_dir,'data/predictions/{}.csv'.format(item_predicted)))
 		# print(item_predicted)
 		# print(df.tail(10))
 
@@ -56,20 +58,18 @@ def suggest():
 	prediction_index = request.args.get("pred", default=1, type=int)
 	if (prediction_index > 7): return "Incorrect prediction index, please enter number between 1 and 7."
 
-	items_predicted = ['Amulet_of_strength', "Green_d'hide_vamb", 'Staff_of_fire', 'Zamorak_monk_top', 'Staff_of_air', \
-		'Adamantite_bar', 'Zamorak_monk_bottom', 'Adamant_platebody', 'Runite_ore', 'Rune_scimitar', 'Rune_pickaxe', \
-			'Rune_full_helm', 'Rune_kiteshield', 'Rune_2h_sword', 'Rune_platelegs', 'Rune_platebody', 'Old_school_bond']
+	items_predicted = ['Mithril_bar','Air_battlestaff','Red_chinchompa','Saradomin_brew(4)','Anti-venom+(4)','Cactus_spine']
 				
 	data = {}
 	
-	buy_avg = pd.read_csv('data/rsbuddy/buy_average.csv')
+	buy_avg = pd.read_csv(os.path.join(parent_dir,'data/rsbuddy/buy_average.csv'))
 	buy_avg = buy_avg.set_index('timestamp')
 	buy_avg = buy_avg.drop_duplicates()
 	buy_avg = buy_avg.replace(to_replace=0, method='ffill')
 
 	# Get latest real price values 
 	temp_last_row = None
-	with open('data/predictions/{}.csv'.format(items_predicted[0]), mode='r') as infile:
+	with open(os.path.join(parent_dir,'data/predictions/{}.csv'.format(items_predicted[0])), mode='r') as infile:
 		for row in reversed(list(csv.reader(infile))):
 			temp_last_row = row
 			break
@@ -79,7 +79,7 @@ def suggest():
 
 	# Get all values predicted
 	for item_predicted in items_predicted:
-		with open('data/predictions/{}.csv'.format(item_predicted), mode='r') as infile:
+		with open(os.path.join(parent_dir,'data/predictions/{}.csv'.format(item_predicted)), mode='r') as infile:
 			last_row = None
 			for row in reversed(list(csv.reader(infile))):
 				last_row = row
@@ -106,7 +106,7 @@ def api_all():
 	    return "Error: No name field provided. Please specify an name."
 
 	try:
-		with open('data/predictions/{}.csv'.format(name), mode='r') as infile:
+		with open(os.path.join(parent_dir,'data/predictions/{}.csv'.format(name)), mode='r') as infile:
 			
 			reader = csv.reader(infile)
 			header_row = next(reader)
@@ -121,4 +121,4 @@ def api_all():
 	return jsonify(mydict)
 
 if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=80)
+	app.run(host="0.0.0.0", port=8888)

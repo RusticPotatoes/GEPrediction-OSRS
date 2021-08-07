@@ -1,4 +1,8 @@
-Video/
-GEPred.xml
-data/osbuddy/excess
-data/rsbuddy/excess
+data/osbuddy/old
+data/rsbuddy/old
+data/newest
+.ipynb_checkpoints
+__pycache__
+build/
+dist/
+python_notebooks/.ipynb_checkpoints

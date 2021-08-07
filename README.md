@@ -24,6 +24,10 @@ The journey so far has been documented in a series of Youtube videos found here:
   - pandas
   - flask
 
+## Dependencies install
+python /path/to/GEPrediction-OSRS/setup.py install --user
+
+
 ## Usage
 
 ### Creating you own models

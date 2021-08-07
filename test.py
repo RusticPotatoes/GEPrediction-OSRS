@@ -4,6 +4,9 @@ import time
 import csv
 import os.path
 import datetime
+import os
+
+parent_dir = os.path.dirname(os.path.realpath(__file__))
 
 # rsbuddyAPI = "https://rsbuddy.com/exchange/summary.json"
 
@@ -28,7 +31,7 @@ import datetime
 # initialize_fullDict()
 
 def writeToCSV(filename):
-    with open('data/{}.csv'.format(filename), mode='w', newline='') as GE_data:
+    with open(os.path.join(parent_dir,'data/{}.csv'.format(filename)), mode='w', newline='') as GE_data:
         GE_writer = csv.writer(GE_data, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         GE_writer.writerow(['timestamp, random1, random2'])  # write field names
 
@@ -37,7 +40,7 @@ def writeToCSV(filename):
         GE_writer.writerow(new_array)
 
 def appendToCSV(filename):
-    with open('data/{}.csv'.format(filename), mode='a', newline='') as GE_data:
+    with open(os.path.join(parent_dir,'data/{}.csv'.format(filename)), mode='a', newline='') as GE_data:
         GE_writer = csv.writer(GE_data, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         # GE_writer.writerow(['timestamp, random1, random2'])  # write field names
         
@@ -46,7 +49,7 @@ def appendToCSV(filename):
         GE_writer.writerow(new_array)
 
 # filename = 'test'
-# if os.path.isfile('data/{}.csv'.format(filename)):
+# if os.path.isfile('/opt/app/data/workspace/GEPrediction-OSRS/data/{}.csv'.format(filename)):
 #     appendToCSV(filename)
 # else:
 #     writeToCSV(filename)
