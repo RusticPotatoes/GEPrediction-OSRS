@@ -17,6 +17,7 @@ setup(
         'matplotlib',
         'numpy',
         'pandas',
-        'flask'
+        'flask',
+        'imageio'
         ]
     )

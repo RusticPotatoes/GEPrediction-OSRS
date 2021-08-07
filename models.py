@@ -12,6 +12,8 @@ import json
 import datetime
 import gc
 import math
+import time
+import imageio
 
 # current directory
 parent_dir = os.path.dirname(os.path.realpath(__file__))
@@ -23,6 +25,23 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 #TRAIN_SPLIT = 10
 tf.random.set_seed(13)
 STEP = 1
+
+def gif_from_png_dir(item_to_predict,img_dir):
+	images = []
+	timestr = time.time()#('%Y%m%d-%H%M%S')
+	for file_name in sorted(os.listdir(img_dir)):
+		if file_name.endswith('.png'):
+			file_path = os.path.join(img_dir, file_name)
+			images.append(imageio.imread(file_path))
+	gifpath= os.path.join(img_dir,'{}_{}.gif'.format(item_to_predict,timestr))
+	imageio.mimsave(gifpath, images, fps=1)
+
+def clear_pngs(img_dir):
+	if not os.path.exists(img_dir):
+		return
+	for file in os.listdir(img_dir):
+		if file.endswith('.png'):
+			os.remove(os.path.join(img_dir,file)) 
 
 # =========== UNIVARIATE SINGLE STEP FUNCTIONS =========== 
 def univariate_data(dataset, start_index, end_index, history_size, target_size):
@@ -52,7 +71,7 @@ def univariate_rnn(df, item_to_predict, save_model=True, verbose=1, past_history
 	#		past_history=len(uni_data)-1
 	split=math.ceil(len(uni_data)/2)
 	univariate_past_history = past_history
-	univariate_future_target = 0
+	univariate_future_target = 5
 	x_train_uni, y_train_uni = univariate_data(uni_data, 0, split,
 											univariate_past_history,
 											univariate_future_target)
@@ -117,7 +136,7 @@ def apply_univariate_test(df, item_to_predict, model, item_std, item_mean, past_
 	uni_data = df[item_to_predict]
 	uni_data = uni_data.values
 	univariate_past_history = past_history
-	univariate_future_target = 0
+	univariate_future_target = 5
 	split=math.floor((len(uni_data)/2)-1)
 
 	x_val_uni, y_val_uni = univariate_data(uni_data, split, None,
@@ -176,7 +195,7 @@ def plot_train_history(history, title):
 def multivariate_rnn_single(df, item_to_predict, save_model=True, verbose=1, past_history=5, BATCH_SIZE=32, BUFFER_SIZE=30, \
 	EVALUATION_INTERVAL=200, EPOCHS=10, num_dropout=1, lstm_units=32, learning_rate=0.001):
 	dataset = df.values
-	future_target = 1
+	future_target = 5
 	STEP = 1
 	split=math.ceil(len(dataset)/2)
 
@@ -224,7 +243,7 @@ def multivariate_rnn_single(df, item_to_predict, save_model=True, verbose=1, pas
 
 def apply_multivariate_single_step_test(df, item_to_predict, model, item_std, item_mean, past_history=5, BATCH_SIZE=32):
 	dataset = df.values
-	future_target = 1
+	future_target = 5
 	item_to_predict_index = df.columns.get_loc(item_to_predict)
 	split=math.ceil(len(dataset)/2)
 	x_val_single, y_val_single = multivariate_data(dataset, dataset[:, item_to_predict_index],
@@ -241,14 +260,25 @@ def apply_multivariate_single_step_test(df, item_to_predict, model, item_std, it
 	for x, y in val_data_single.take(3):
 		plot = show_plot([unnormalized(x[0][:, item_to_predict_index].numpy()), unnormalized(y[0].numpy()),
 							unnormalized(model.predict(x)[0])], 1, 'Single Step Prediction - unnormalized')
-		plot.show()
+		#plot.show()
+	
+
 
 # =========== MULTIVARIATE MULTI STEP FUNCTIONS =========== 
 def multi_step_plot(history, true_future, prediction, item_to_predict_index, save_imgs=True, img_title="plot", index=0, item_to_predict=""):
-
+	#debug vars
+	#print("history: [{}] ".format(history))
+	#print("true_future: [{}]".format(true_future))
+	#print("prediction: [{}]".format(prediction))
+	#print("item_to_predict_index: [{}]".format(item_to_predict_index))
+	#print("save_imgs: [{}]".format(save_imgs))
+	#print("img_title: [{}]".format(img_title))
+	#print("index: [{}]".format(index))
+	#print("item_to_predict: [{}]".format(item_to_predict))
+			
 	mode = 0o666
 	img_dir = os.path.join(parent_dir,'imgs/{}'.format(item_to_predict))
-	if not os.path.exists(item_to_predict): os.makedirs(item_to_predict, mode)
+	if not os.path.exists(img_dir): os.makedirs(img_dir, mode)
 
 	fig = plt.figure(figsize=(12, 6))
 	num_in = create_time_steps(len(history))
@@ -277,10 +307,11 @@ def multi_step_plot(history, true_future, prediction, item_to_predict_index, sav
 	#real_val = int(closest_real_values[item_predicted])
 	#pred_val = int(last_row[prediction_index])
 	#data[item_predicted] = [real_val, pred_val, pred_val-real_val]
-
+	#print(os.path.join(img_dir,'{}_{}.png'.format(item_to_predict,index)))
 	if (save_imgs): 
-		fig.savefig(os.path.join(item_to_predict,'{}_{}.png'.format(item_to_predict,index)))
-	plt.show()
+		fig.savefig(os.path.join(img_dir,'{}_{}.png'.format(item_to_predict,index)))
+		#fig.savefig(os.path.join(img_dir,'{}.png'.format(item_to_predict)))
+	#plt.show()
 
 def multivariate_rnn_multi(df, item_to_predict, save_model=True, verbose=1, future_target=5, past_history=5, \
 	BATCH_SIZE=32, BUFFER_SIZE=30, EVALUATION_INTERVAL=200, EPOCHS=10, num_dropout=1, lstm_units=64, learning_rate=0.001):
@@ -340,6 +371,7 @@ def multivariate_rnn_multi(df, item_to_predict, save_model=True, verbose=1, futu
 	return multi_step_history.history
 
 def apply_multivariate_multi_step_test(df, item_to_predict, model, item_std, item_mean, future_target=5, past_history=5, BATCH_SIZE=32):
+	img_dir = os.path.join(parent_dir,'imgs/{}'.format(item_to_predict))
 	dataset = df.values
 	item_to_predict_index = df.columns.get_loc(item_to_predict)
 	split=math.ceil(len(dataset)/2)
@@ -355,9 +387,13 @@ def apply_multivariate_multi_step_test(df, item_to_predict, model, item_std, ite
 		return (val*item_std) + item_mean
 	
 	countindex=0
-	for x, y in val_data_multi.take(3):
-		multi_step_plot(unnormalized(x[0].numpy()), unnormalized(y[0].numpy()), unnormalized(model.predict(x)[0]), item_to_predict_index,item_to_predict=item_to_predict,index=countindex)
+	clear_pngs(img_dir)
+	for x, y in val_data_multi.take(len(x_val_multi)):
+		multi_step_plot(unnormalized(x[countindex].numpy()), unnormalized(y[countindex].numpy()), unnormalized(model.predict(x)[countindex]), item_to_predict_index,item_to_predict=item_to_predict,index=countindex)
 		countindex+=1
+	
+	gif_from_png_dir(item_to_predict,img_dir)
+
 
 # =========== HYPERPARAMETER TUNING FUNCTIONS =========== 
 def multivariate_rnn_multi_hyperparameter_tuning(df, item_to_predict, batch_size=[32], buffer_size = [30], \
