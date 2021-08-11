@@ -1,3 +1,4 @@
+import setuptools
 from setuptools import setup
 import os 
 
@@ -10,14 +11,16 @@ setup(
     author='',
     author_email='',
     url='',
-    python_requires='>=3.9',
-    package_dir={'GEPrediction-OSRS': parent_dir},
+    python_requires='>=3.8',
+    #package_dir={'GEPrediction-OSRS': parent_dir},
     install_requires=[
         'requests',
         'matplotlib',
-        'numpy',
+        'numpy==1.19.2',
+        'sklearn',
         'pandas',
         'flask',
-        'imageio'
+        'imageio',
+        'tensorflow'
         ]
     )

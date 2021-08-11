@@ -1,1 +1,0 @@
-["MACD", "Extended_super_antifire(2)_sq", "Saradomin_brew(4)"]

@@ -12,13 +12,13 @@ parent_dir = os.path.dirname(os.path.realpath(__file__))
 rsAPI = "https://storage.googleapis.com/osb-exchange/summary.json"
 
 dataRepo = os.path.join(os.path.dirname(parent_dir), "data/osbuddy")
-names = ["buy_average","buy_quantity","sell_average","sell_quantity","overall_average","overall_quantity"]
+names = ["low_price","low_volume","high_price","high_volume","overall_average","overall_quantity"]
 
-# One dict each for 'buy_average', 'buy_quantity', 'sell_average', 'sell_quantity', 'overall_average', 'overall_quantity'
-buy_average = []
-buy_quantity = []
-sell_average = []
-sell_quantity = []
+# One dict each for 'low_price', 'low_volume', 'high_price', 'high_volume', 'overall_average', 'overall_quantity'
+low_price = []
+low_volume = []
+high_price = []
+high_volume = []
 overall_average = []
 overall_quantity = []
 
@@ -44,20 +44,20 @@ def initialize_data(json_data, current_timestamp):
     print("{} - initializing data".format(current_timestamp))
     for item in json_data:
         labels.append(json_data[item]["name"].replace(" ", "_"))
-        buy_average.append(json_data[item]["buy_average"])
-        buy_quantity.append(json_data[item]["buy_quantity"])
-        sell_average.append(json_data[item]["sell_average"])
-        sell_quantity.append(json_data[item]["sell_quantity"])
+        low_price.append(json_data[item]["low_price"])
+        low_volume.append(json_data[item]["low_volume"])
+        high_price.append(json_data[item]["high_price"])
+        high_volume.append(json_data[item]["high_volume"])
         overall_average.append(json_data[item]["overall_average"])
         overall_quantity.append(json_data[item]["overall_quantity"])
 
     #for name in names:
-    #   writeToCSV(name,buy_average, current_timestamp)
+    #   writeToCSV(name,low_price, current_timestamp)
 
-    writeToCSV("buy_average", buy_average, current_timestamp)
-    writeToCSV("buy_quantity", buy_quantity, current_timestamp)
-    writeToCSV("sell_average", sell_average, current_timestamp)
-    writeToCSV("sell_quantity", sell_quantity, current_timestamp)
+    writeToCSV("low_price", low_price, current_timestamp)
+    writeToCSV("low_volume", low_volume, current_timestamp)
+    writeToCSV("high_price", high_price, current_timestamp)
+    writeToCSV("high_volume", high_volume, current_timestamp)
     writeToCSV("overall_average", overall_average, current_timestamp)
     writeToCSV("overall_quantity", overall_quantity, current_timestamp)
 
@@ -65,17 +65,17 @@ def append_data(json_data, current_timestamp):
     print("{} - appending data".format(current_timestamp))
 
     for item in json_data:
-        buy_average.append(json_data[item]["buy_average"])
-        buy_quantity.append(json_data[item]["buy_quantity"])
-        sell_average.append(json_data[item]["sell_average"])
-        sell_quantity.append(json_data[item]["sell_quantity"])
+        low_price.append(json_data[item]["low_price"])
+        low_volume.append(json_data[item]["low_volume"])
+        high_price.append(json_data[item]["high_price"])
+        high_volume.append(json_data[item]["high_volume"])
         overall_average.append(json_data[item]["overall_average"])
         overall_quantity.append(json_data[item]["overall_quantity"])
 
-    appendToCSV("buy_average", buy_average, current_timestamp)
-    appendToCSV("buy_quantity", buy_quantity, current_timestamp)
-    appendToCSV("sell_average", sell_average, current_timestamp)
-    appendToCSV("sell_quantity", sell_quantity, current_timestamp)
+    appendToCSV("low_price", low_price, current_timestamp)
+    appendToCSV("low_volume", low_volume, current_timestamp)
+    appendToCSV("high_price", high_price, current_timestamp)
+    appendToCSV("high_volume", high_volume, current_timestamp)
     appendToCSV("overall_average", overall_average, current_timestamp)
     appendToCSV("overall_quantity", overall_quantity, current_timestamp)
 
@@ -105,17 +105,17 @@ def merge_data(json_data, current_timestamp):
         files.append('{}.csv'.format(name))
     count = 0
 
-    CSV_HEADERS = list(pd.read_csv('{}/buy_average.csv'.format(dataRepo), error_bad_lines=False).head(0))
+    CSV_HEADERS = list(pd.read_csv('{}/low_price.csv'.format(dataRepo), error_bad_lines=False).head(0))
     JSON_HEADERS = ['timestamp']
 
     for key,value in json_data.items():
         JSON_HEADERS.append(value['name'].replace(" ", "_"))       
 
     #dont merge for now
-    #buy_average_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "buy_average")).reindex(columns = JSON_HEADERS, fill_value=0)
-    #buy_quantity_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "buy_quantity")).reindex(columns = JSON_HEADERS, fill_value=0)
-    #sell_average_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "sell_average")).reindex(columns = JSON_HEADERS, fill_value=0)
-    #sell_quantity_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "sell_quantity")).reindex(columns = JSON_HEADERS, fill_value=0)
+    #low_price_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "low_price")).reindex(columns = JSON_HEADERS, fill_value=0)
+    #low_volume_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "low_volume")).reindex(columns = JSON_HEADERS, fill_value=0)
+    #high_price_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "high_price")).reindex(columns = JSON_HEADERS, fill_value=0)
+    #high_volume_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "high_volume")).reindex(columns = JSON_HEADERS, fill_value=0)
     #overall_average_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "overall_average")).reindex(columns = JSON_HEADERS, fill_value=0)
     #overall_quantity_importedcsv = pd.read_csv('{}/{}.csv'.format(dataRepo, "overall_quantity")).reindex(columns = JSON_HEADERS, fill_value=0)
 
@@ -123,16 +123,16 @@ def merge_data(json_data, current_timestamp):
     for file in files:
         os.rename('{}/{}'.format(dataRepo,file), '{}/old/{}_{}'.format(dataRepo,current_timestamp,file))
 
-    buy_average_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "buy_average"), index=False)
-    buy_quantity_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "buy_quantity"), index=False)
-    sell_average_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "sell_average"), index=False)
-    sell_quantity_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "sell_quantity"), index=False)
+    low_price_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "low_price"), index=False)
+    low_volume_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "low_volume"), index=False)
+    high_price_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "high_price"), index=False)
+    high_volume_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "high_volume"), index=False)
     overall_average_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "overall_average"), index=False)
     overall_quantity_importedcsv.to_csv('{}/{}.csv'.format(dataRepo, "overall_quantity"), index=False) 
 
 def doHeadersMatch(json_data):
     doHeadersMatch = False
-    HEADERS = list(pd.read_csv('{}/buy_average.csv'.format(dataRepo), error_bad_lines=False).head(0))
+    HEADERS = list(pd.read_csv('{}/low_price.csv'.format(dataRepo), error_bad_lines=False).head(0))
     if (len(HEADERS)) == (len(json_data)+1):
         doHeadersMatch=True
     return doHeadersMatch
@@ -146,7 +146,7 @@ def main():
 
     headersMatch = True
 
-    filesexist = os.path.isfile('{}/buy_average.csv'.format(dataRepo))
+    filesexist = os.path.isfile('{}/low_price.csv'.format(dataRepo))
 
     # load data from sources
     r = requests.get(rsAPI)

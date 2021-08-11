@@ -5,6 +5,9 @@ import json
 import os
 
 parent_dir = os.path.dirname(os.path.realpath(__file__))
+data_dir = os.path.join(parent_dir,"data")
+runelite_dir = os.path.join(data_dir,"runelite")
+predict_dir= os.path.join(data_dir,"prediction")
 
 app = Flask(__name__, template_folder='./templates', static_folder='./static')
 
@@ -18,19 +21,19 @@ def index():
 	# 				'Rune_full_helm', 'Rune_kiteshield', 'Rune_2h_sword', 'Rune_platelegs', 'Rune_platebody', 'Old_school_bond']
 	
 	items_predicted = ['Mithril_bar','Air_battlestaff','Red_chinchompa','Manta_ray','Saradomin_brew(4)','Anglerfish','Purple_sweets','Anti-venom+(4)','Cactus_spine']
-				
+			
 	data = {}
 	names = {}
 	count = 0 
 	
-	buy_avg = pd.read_csv(os.path.join(parent_dir,'data/rsbuddy/buy_average.csv'))
+	buy_avg = pd.read_csv(os.path.join(runelite_dir,'buy_average.csv'))
 	buy_avg = buy_avg.set_index('timestamp')
 	buy_avg = buy_avg.drop_duplicates()
 	buy_avg = buy_avg.reset_index()
 	buy_avg = buy_avg.replace(to_replace=0, method='ffill')
 
 	for item_predicted in items_predicted:
-		df = pd.read_csv(os.path.join(parent_dir,'data/predictions/{}.csv'.format(item_predicted)))
+		df = pd.read_csv(os.path.join(predict_dir,'{}.csv'.format(item_predicted)))
 
 		current_df = buy_avg[['timestamp', item_predicted]]
 		current_df = current_df.rename(columns={'timestamp': 'ts', item_predicted: 'real'})
@@ -60,14 +63,14 @@ def suggest():
 				
 	data = {}
 	
-	buy_avg = pd.read_csv(os.path.join(parent_dir,'data/rsbuddy/buy_average.csv'))
+	buy_avg = pd.read_csv(os.path.join(runelite_dir,'buy_average.csv'))
 	buy_avg = buy_avg.set_index('timestamp')
 	buy_avg = buy_avg.drop_duplicates()
 	buy_avg = buy_avg.replace(to_replace=0, method='ffill')
 
 	# Get latest real price values 
 	temp_last_row = None
-	with open(os.path.join(parent_dir,'data/predictions/{}.csv'.format(items_predicted[0])), mode='r') as infile:
+	with open(os.path.join(predict_dir,'{}.csv'.format(items_predicted[0])), mode='r') as infile:
 		for row in reversed(list(csv.reader(infile))):
 			temp_last_row = row
 			break
@@ -77,7 +80,7 @@ def suggest():
 
 	# Get all values predicted
 	for item_predicted in items_predicted:
-		with open(os.path.join(parent_dir,'data/predictions/{}.csv'.format(item_predicted)), mode='r') as infile:
+		with open(os.path.join(predict_dir,'{}.csv'.format(item_predicted)), mode='r') as infile:
 			last_row = None
 			for row in reversed(list(csv.reader(infile))):
 				last_row = row
@@ -104,7 +107,7 @@ def api_all():
 	    return "Error: No name field provided. Please specify an name."
 
 	try:
-		with open(os.path.join(parent_dir,'data/predictions/{}.csv'.format(name)), mode='r') as infile:
+		with open(os.path.join(predict_dir,'{}.csv'.format(name)), mode='r') as infile:
 			
 			reader = csv.reader(infile)
 			header_row = next(reader)

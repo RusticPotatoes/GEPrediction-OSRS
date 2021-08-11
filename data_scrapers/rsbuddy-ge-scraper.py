@@ -5,14 +5,7 @@ import time
 import os.path
 import os
 import pandas as pd
-
-# current directory
-parent_dir = os.path.dirname(os.path.realpath(__file__))
-
-rsbuddyAPI = "https://rsbuddy.com/exchange/summary.json"
-
-dataRepo = os.path.join(os.path.dirname(parent_dir), "data/rsbuddy")
-names = ["buy_average","buy_quantity","sell_average","sell_quantity","overall_average","overall_quantity"]
+import "https://github.com/cywjoel/osliveprice.git"
 
 # One dict each for 'buy_average', 'buy_quantity', 'sell_average', 'sell_quantity', 'overall_average', 'overall_quantity'
 buy_average = []
@@ -23,6 +16,13 @@ overall_average = []
 overall_quantity = []
 
 labels = ['timestamp']
+# current directory
+parent_dir = os.path.dirname(os.path.realpath(__file__))
+
+rsbuddyAPI = "https://rsbuddy.com/exchange/summary.json"
+
+dataRepo = os.path.join(os.path.dirname(parent_dir), "data/rsbuddy")
+names = ["buy_average","buy_quantity","sell_average","sell_quantity","overall_average","overall_quantity"]
 
 def writeToCSV(filename, data, timestamp):
     with open('{}/{}.csv'.format(dataRepo, filename), mode='w', newline='') as GE_data:

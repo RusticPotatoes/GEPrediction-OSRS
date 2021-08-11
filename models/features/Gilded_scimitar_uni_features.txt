@@ -1,1 +1,0 @@
-["Cosmic_rune", "Gilded_2h_sword", "Gilded_scimitar"]

@@ -1,1 +1,0 @@
-["MACD", "Rune_full_helm_sa", "Rune_full_helm"]

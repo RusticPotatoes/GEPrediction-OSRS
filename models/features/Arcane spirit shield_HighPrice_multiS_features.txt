@@ -1,0 +1,1 @@
+["dayofweek", "hour", "MACD", "RSI", "slope", "Arcane spirit shield"]

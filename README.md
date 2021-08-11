@@ -23,10 +23,11 @@ The journey so far has been documented in a series of Youtube videos found here:
   - numpy
   - pandas
   - flask
+  - imageio
+  - sklearn
 
 ## Dependencies install
 python /path/to/GEPrediction-OSRS/setup.py install --user
-
 
 ## Usage
 
@@ -39,7 +40,7 @@ python models.py
 3. You should see the .h5 model file created in the models folder along with features.txt file in the models/features folder
 
 ### Applying the created models
-1. Make sure you have the latest data stored in data/rsbuddy or change the path of DATA_FOLDER in line 101 of application.py
+1. Make sure you have the latest item list, change the list of items in the main() function in line 98 of application.py
 2. Change the items_to_predict array in the main() function to match the models you created/have.
 3. Then, run:
 ```
@@ -65,22 +66,18 @@ jupyter notebook
 
 ### Scraping your own data
 
-If you wish to scrape your own data the way I've been doing it, run the following script every 2 minutes (for osbuddy):
+If you wish to scrape your own data, run the following script every 30 minutes (runelite):
 ```
-python osbuddy-ge-scraper.py
+python runelite_ge_scraper.py
 ```
-OR every 30 minutes (for rsbuddy):
 
-```
-python rsbuddy-ge-scraper.py
-```
-You can do this automatically by using [crontab](http://man7.org/linux/man-pages/man5/crontab.5.html) if you're on a Linux machine or [windows scheduler](https://www.windowscentral.com/how-create-automated-task-using-task-scheduler-windows-10) if you're on a Windows machine. 
+You can do this automatically by using [crontab](http://man7.org/linux/man-pages/man5/crontab.5.html) (*/30 * * * *) if you're on a Linux machine or [windows scheduler](https://www.windowscentral.com/how-create-automated-task-using-task-scheduler-windows-10) if you're on a Windows machine. 
 
 ## Credits
 
 ### Contributions
 
-* Please email me at billnyetheai@gmail.com or message me on discord at ChronicCoder#1667
+* ChronicCoder#1667, RusticPotatoes
 
 ### Community
 

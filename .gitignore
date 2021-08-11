@@ -6,3 +6,5 @@ __pycache__
 build/
 dist/
 python_notebooks/.ipynb_checkpoints
+*.csv
+notes.py
