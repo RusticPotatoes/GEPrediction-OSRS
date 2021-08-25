@@ -1,1 +1,0 @@
-["dayofweek", "hour", "MACD", "RSI", "slope", "Inquisitor's mace"]

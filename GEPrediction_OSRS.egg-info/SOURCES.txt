@@ -1,7 +1,0 @@
-README.md
-setup.py
-GEPrediction_OSRS.egg-info/PKG-INFO
-GEPrediction_OSRS.egg-info/SOURCES.txt
-GEPrediction_OSRS.egg-info/dependency_links.txt
-GEPrediction_OSRS.egg-info/requires.txt
-GEPrediction_OSRS.egg-info/top_level.txt

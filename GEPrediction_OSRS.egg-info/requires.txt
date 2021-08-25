@@ -1,8 +1,0 @@
-requests
-matplotlib
-numpy
-sklearn
-pandas
-flask
-imageio
-tensorflow

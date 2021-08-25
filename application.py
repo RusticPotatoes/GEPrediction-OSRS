@@ -58,8 +58,7 @@ def apply_univariate(df, item_to_predict, model, item_std, item_mean, past_histo
 	def unnormalized(val):
 		return (val*item_std) + item_mean
 
-	result = unnormalized(model.predict_on_batch(formatted_values)[0])
-	
+	result = unnormalized(model.predict(formatted_values))
 	return result
 
 def apply_multivariate_single_step(df, item_to_predict, model, item_std, item_mean, past_history=5):
@@ -71,8 +70,7 @@ def apply_multivariate_single_step(df, item_to_predict, model, item_std, item_me
 	def unnormalized(val):
 		return (val*item_std) + item_mean
 
-	result = unnormalized(model.predict_on_batch(formatted_values)[0])
-	
+	result = unnormalized(model.predict(formatted_values))
 	return result
 
 def apply_multivariate_multi_step(df, item_to_predict, model, item_std, item_mean, future_target=5, past_history=5):
@@ -83,9 +81,38 @@ def apply_multivariate_multi_step(df, item_to_predict, model, item_std, item_mea
 	def unnormalized(val):
 		return (val*item_std) + item_mean
 
-	result = unnormalized(model.predict_on_batch(formatted_values)[0])
-	
+	result = unnormalized(model.predict_on_batch(formatted_values))
+
 	return result
+
+def plot_data(df):
+    data = []
+    for col in df.columns:
+        data.append(go.Scatter(x=df.index,y=df[col],name=col))
+    fig = go.Figure(data=data)
+    fig.show()
+
+def evaluate_result(model, trainX,trainY, testX, testY, ITEM_TO_PREDICT, verbose=True, batch_size=100):
+    # make predictions
+    trainPredict = model.predict(trainX, batch_size)
+    testPredict = model.predict(testX, )
+
+    true_values = trainY + testY
+    train_pred = trainPredict + [np.nan]*(len(true_values)-len(trainPredict))
+    test_pred = [np.nan]*(len(true_values)-len(testPredict)) + testPredict
+    
+    result = pd.DataFrame(columns=['trainPredict','testPredict','True'])
+    result['True'] = true_values
+    result['trainPredict'] = train_pred
+    result['testPredict'] = test_pred
+
+    # folder = f'/content/drive/My Drive/Models/{ITEM_TO_PREDICT}'
+    #if not os.path.exists(folder):
+    #    os.makedirs(folder)
+    #model.save(f'{folder}/{int(time.time())}.h5')
+    #if verbose:
+    #    plot_data(result)
+    return result
 
 def main():
 	# Get the seconds since epoch
@@ -96,10 +123,10 @@ def main():
 	model_types = ['uni', 'multiS', 'multiM']
 	price_type_names = ["HighPrice","LowPrice","LowVolumePrice","HighVolumePrice"]
 	items_to_predict = ["Arcane spirit shield","Inquisitor's mace","Old school bond"]#['Mithril bar','Air battlestaff','Red chinchompa','Manta ray','Saradomin brew(4)','Anglerfish','Purple sweets','Anti-venom+(4)','Cactus spine']
-	items_selected = items_to_predict#item_selection()
+	items_selected = items_to_predict#[:2] #item_selection()
 	preprocessed_df = None
 	
-	for item_to_predict in items_to_predict[:2]:
+	for item_to_predict in items_to_predict[:2]:#use[:2] for the first 2 
 		# GET LIST OF FEATURES
 		for price_type_name in price_type_names[:2]:
 			for model_type in model_types:
@@ -147,11 +174,11 @@ def main():
 				# LOADING AND APPLYING MODEL
 				loaded_model = tf.keras.models.load_model(os.path.join(models_dir,'{}_{}_{}_model.h5'.format(item_to_predict,price_type_name, model_type)))
 				if (model_type == 'uni'):
-					result = apply_univariate(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
+					result = apply_univariate(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)[0]
 				elif (model_type == 'multiS'):
-					result = apply_multivariate_single_step(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
+					result = apply_multivariate_single_step(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)[0]
 				elif (model_type == 'multiM'):
-					result = apply_multivariate_multi_step(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)
+					result = apply_multivariate_multi_step(selected_df, item_to_predict, loaded_model, pred_std, pred_mean)[0]
 				else:
 					print("Unrecognized model type.")
 				

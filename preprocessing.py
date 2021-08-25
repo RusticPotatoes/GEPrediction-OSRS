@@ -222,22 +222,28 @@ def prepare_data_from_df(item_to_predict, verbose=False, data_frame = pd.DataFra
 	#low_volume= buy_quantity = lowPriceVolume
 	#high_volume = sell_quantity = highPriceVolume	
 	low_price = data_frame.pivot(index='timestamp',columns='name', values='avgLowPrice')
+	low_price = low_price[(low_price != 0).all(1)] #drop all 0's
+
+
 	#low_price = low_price.drop_duplicates()
 	#df = low_price#[item_selected].replace(to_replace=0, method='ffill')
  	#low_price.columns = [str(col) + '_ba' for col in low_price.columns]
 
 	## Fetched API features (buy quantity, sell price average)
 	high_price = data_frame.pivot(index='timestamp', columns='name', values='avgHighPrice')
+	high_price = high_price[(high_price != 0).all(1)]
 	#high_price = high_price.drop_duplicates()
 	#high_price = high_price[items_selected].replace(to_replace=0, method='ffill')
 	#high_price.columns = [str(col) + '_sa' for col in high_price.columns]
 
 	low_volume = data_frame.pivot(index='timestamp', columns='name', values='lowPriceVolume')
+	low_volume = low_volume[(low_volume != 0).all(1)]
 	#low_volume = low_volume.drop_duplicates()
 	#low_volume = low_volume[items_selected].replace(to_replace=0, method='ffill')
 	#low_volume.columns = [str(col) + '_bq' for col in low_volume.columns]
 
 	high_volume = data_frame.pivot(index='timestamp', columns='name', values='highPriceVolume')
+	high_volume = high_volume[(high_volume != 0).all(1)]
 	#high_volume = high_volume.drop_duplicates()
 	#high_volume = high_volume[items_selected].replace(to_replace=0, method='ffill')
 	#high_volume.columns = [str(col) + '_sq' for col in high_volume.columns]
